@@ -1,0 +1,174 @@
+/* css reset stuff */
+* {
+    box-sizing: border-box;
+}
+body {
+      background: -webkit-linear-gradient(330deg, #000, #f0a6ca);
+      background: linear-gradient(120deg, #000, #f0a6ca);
+      display: flex;
+      min-height: 100vh;
+      min-width: 100vw;
+}
+main {
+        margin: 0;
+        font-family: 微软雅黑, Arial, sans-serif;
+        font-size: 16px;
+        line-height: 1.5;
+        height: 100%;
+        min-height: 600px;
+    }
+
+
+    .chat-container {
+        margin: 20px 0px 0px 0px;
+        padding: px;
+        background: rgba(255, 255, 255, 0.05);
+        box-shadow: 1px 1px 12px rgba(0, 0, 0, 0.1);
+        height: 80%;
+    }
+
+    .chat-message {
+      padding: 6px;
+      border-radius: 3px;
+      margin-bottom: 3px;
+    }
+
+    .bot-message {
+        background: rgba(255, 255, 255, 0.2);
+        color: black;
+        padding: 5px 6px 8px 6px;
+        border-radius: 6px;
+        float: right;
+        margin-right: 40px;
+        position:relative;
+        max-width: 50%;
+    }
+
+    .human-message {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        margin: 13px 1px;
+        padding: 5px 6px 8px 6px;
+        border-radius: 6px;
+        float: left;
+        margin-left: 40px;
+        position: relative;
+        max-width: 50%;
+    }
+
+    .input {
+      width: 100%;
+      margin: 5px 0px;
+      height: 60px;
+      border: 1px solid rosybrown;
+      border-radius: 3px;
+    }
+
+    .human-message:after{
+        content: "";
+    position: absolute;
+    margin-top: -6px;
+    margin-left: -5px;
+    border-left: 12px solid transparent;
+    border-right: 12px solid transparent;
+    border-bottom: 12px solid rgba(255, 255, 255, 0.2);
+    transform: rotate(45deg);
+    left: -11px;
+    top: 10px;
+    }
+    .bot-message:after {
+    content: "";
+    position:absolute;
+    margin-top:-6px;
+    margin-left:-5px;
+    border-left: 12px solid transparent;
+    border-right: 12px solid transparent;
+    border-bottom: 12px solid rgba(255, 255, 255, 0.2);
+    transform:rotate(-45deg);
+    right: -16px;
+    top: 10px;
+}
+
+/* header */
+header      {
+    color: darkgray;
+    padding: 20px 30px;
+}
+
+/* logo */
+header  #logo   {
+    color: darkgray;
+    text-decoration: none;
+    width: 49%;
+    display: inline-block;
+    font-weight: 500;
+    font-size: 1.75rem;
+}
+
+#logo   img{
+    width: 40px;
+    border-radius: 3px;
+    margin: 8px;
+    vertical-align: middle;
+}
+
+/* main navigation */
+@media (min-width: 48em)
+    .nav-masthead {
+    float: right;
+}
+header #main-navigation  {
+    width: 49%;
+    display: inline-block;
+    text-align: right;
+    font-weight: 400;
+}
+
+header #main-navigation ul {
+    list-style: none;
+    padding: 0;
+}
+header #main-navigation ul li {
+    display: inline-block;
+}
+header #main-navigation ul li a{
+    color: darkgray;
+    text-decoration: none;
+    padding: 10px 15px;
+    border-radius: 3px;
+    transition: 0.3s ease all;
+}
+
+header #main-navigation ul li a:hover{
+    background: gainsboro;
+}
+
+.cover-container {
+    border-collapse: collapse;
+    padding: 0;
+}
+.nav-link{
+    list-style: none;
+    color: darkgray;
+}
+
+footer{
+    color: white;
+    text-align: center;
+    display: inline-block;
+}
+/* responsive */
+/* mobile styling */
+@media screen and (max-width: 768px){
+    header #logo   {
+        width: 100%;
+        display: block;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+    header #main-navigation  {
+        width: 100%;
+        display: block;
+        text-align: center;
+    }
+}
