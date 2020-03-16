@@ -47,6 +47,13 @@ from keras.layers import LSTM, Dense, TimeDistributed, Embedding, Bidirectional
 from keras.models import Model, Input
 from keras_contrib.layers import CRF
 from keras.callbacks import ModelCheckpoint
+from sklearn.model_selection import train_test_split
+from seqeval.metrics import precision_score, recall_score, f1_score, classification_report
+from sklearn_crfsuite.metrics import flat_classification_report
+from keras.models import load_model
+from keras_contrib.utils import save_load_utils
+from keras_contrib.losses import crf_loss
+from keras_contrib.metrics import crf_viterbi_accuracy
 
 # max sequence length
 # batch size
@@ -54,7 +61,7 @@ max_features = 20000
 MAX_LEN = 75
 bs = 32
 embedding = 40
-epochs = 8
+epochs = 1
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -67,14 +74,30 @@ tokenized_texts = [tokenizer.tokenize(sent) for sent in sentences]
 # count the num of unique characters in all sentences
 unique_char = []
 for list in tokenized_texts:
+    if list == '[UNK]':
+        continue
     for chars in list:
         if chars not in unique_char:
             unique_char.append(chars)
 
+# word is key and its value is corresponding index
+word_to_index = {w : i + 1 for i, w in enumerate(unique_char)}
+word_to_index["PAD"] = 0
 
-# pad tokenized text to desired length
-input_ids = pad_sequences([tokenizer.convert_tokens_to_ids(txt) for txt in tokenized_texts],
-                          maxlen=MAX_LEN, dtype="long", truncating="post", padding="post")
+
+# Converting each sentence into list of index from list of tokens
+input_ids =[]
+for sen in sentences:
+    s = []
+    for w in sen:
+        if w in word_to_index.keys():
+            s.append(word_to_index[w])
+        else:
+            s.append(word_to_index['[UNK]'])
+    input_ids.append(s)
+# Padding each sequence to have same length  of each word
+input_ids = pad_sequences(maxlen = MAX_LEN, sequences = input_ids, padding = "post", value = word_to_index["PAD"])
+#
 tags = pad_sequences(tags,
                      maxlen=MAX_LEN, value=0, padding="post",
                      dtype="long", truncating="post")
@@ -82,24 +105,58 @@ tags = [to_categorical(i, num_classes = 3) for i in tags]
 print(input_ids.shape)
 print(np.array(tags).shape)
 
-# Model architecture
-input = Input(shape = (MAX_LEN,))
-model = Embedding(input_dim = len(unique_char) + 2, output_dim = embedding, input_length = MAX_LEN)(input)
-model = Bidirectional(LSTM(units = 50, return_sequences=True, recurrent_dropout=0.1))(model)
-model = TimeDistributed(Dense(50, activation="relu"))(model)
-crf = CRF(3)  # CRF layer
-out = crf(model)  # output
+X_train, X_test, y_train, y_test = train_test_split(input_ids, tags, test_size = 0.15)
 
-model = Model(input, out)
-model.compile(optimizer="rmsprop", loss=crf.loss_function, metrics=[crf.accuracy])
+# # Model architecture
+# input = Input(shape = (MAX_LEN,))
+# model = Embedding(input_dim = len(unique_char) + 1, output_dim = embedding, input_length = MAX_LEN)(input)
+# model = Bidirectional(LSTM(units = 50, return_sequences=True, recurrent_dropout=0.1))(model)
+# model = TimeDistributed(Dense(50, activation="relu"))(model)
+# crf = CRF(3)  # CRF layer
+# out = crf(model)  # output
+#
+# model = Model(input, out)
+# model.compile(optimizer="rmsprop", loss=crf.loss_function, metrics=[crf.accuracy])
+#
+# model.summary()
 
-model.summary()
+save_dir = os.path.join(os.path.dirname(os.path.realpath(__file__)), "dataset/model.h5")
+#
+# checkpointer = ModelCheckpoint(filepath = save_dir,
+#                        verbose = 0,
+#                        mode = 'auto',
+#                        save_best_only = True,
+#                        monitor='val_loss')
 
-checkpointer = ModelCheckpoint(filepath = 'model.h5',
-                       verbose = 0,
-                       mode = 'auto',
-                       save_best_only = True,
-                       monitor='val_loss')
+# history = model.fit(X_train, np.array(y_train), batch_size=bs, epochs=epochs,
+#                     validation_split=0.1)
+# save_model = model.save(save_dir)
+# print(history.history.keys())
+custom_objects={'CRF': CRF,'crf_loss':crf_loss,'crf_viterbi_accuracy':crf_viterbi_accuracy}
+model= load_model(save_dir, custom_objects = custom_objects)
 
-history = model.fit(input_ids, np.array(tags), batch_size=bs, epochs=epochs,
-                    validation_split=0.1, callbacks=[checkpointer])
+# Evaluation
+y_pred = model.predict(X_test)
+y_pred = np.argmax(y_pred, axis=-1)
+y_test_true = np.argmax(y_test, -1)
+
+print(y_pred.shape, 'y test true:', y_test_true.shape)
+# print("F1-score is : {:.1%}".format(f1_score(y_test_true, y_pred)))
+
+report = flat_classification_report(y_pred=y_pred, y_true=y_test_true)
+print(report)
+
+
+# At every execution model picks some random test sample from test set.
+i = np.random.randint(0,X_test.shape[0]) # choose a random number between 0 and len(X_te)b
+p = model.predict(np.array([X_test[i]]))
+p = np.argmax(p, axis=-1)
+true = np.argmax(y_test[i], -1)
+
+print("Sample number {} of {} (Test Set)".format(i, X_test.shape[0]))
+# Visualization
+print("{:15}||{:5}||{}".format("Word", "True", "Pred"))
+print(30 * "=")
+for w, t, pred in zip(X_test[i], true, p[0]):
+    if w != 0:
+        print("{:15}: {:5} {}".format(unique_char[w-2], t, pred))
