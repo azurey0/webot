@@ -101,25 +101,34 @@ bc = BertClient()
 
 class IRbot:
     def chat(sentence):
+        # number of nn to return
+        k = 6
+        # answers idx ranked 2-5
+        potential_answer_idx = {}
         # encode input sentence
         embeddings = bc.encode(sentence.split())[0].reshape(1, -1)
         # print(embeddings.shape)
         # look for the index of similar embeddings in BallTree of questions
-        dist, index = fir_question_tree.query(embeddings)
-        # first look up cqa, if no similar answer, look up xqa
+        dist, index = fir_question_tree.query(embeddings, k)
+        # # first look up cqa, if no similar answer, look up xqa
+        # print(type(index[0][1:]))
         if float(dist[0][0]) > 9:
-            dist, index = sec_question_tree.query(embeddings)
+            dist, index = sec_question_tree.query(embeddings, k)
+            potential_answer_idx['xqa'] = index[0][1:].tolist()
             answer = r.hget(f"xqa:{int(index[0][0])}", 'answer').decode("utf-8")
-            return answer
+            # print(answer, potential_answer_idx)
+            return answer, potential_answer_idx
         # get answer according to the index in dataset
         answer = r.hget(f"cqa:{int(index[0][0])}", 'answer').decode("utf-8")
-        return answer
+        potential_answer_idx['cqa'] = index[0][1:].tolist()
+        # print(answer,potential_answer_idx)
+        return answer, potential_answer_idx
 
 # use for local testing
-# if __name__ == "__main__":
-#     bot = IRbot()
-#
-#     while True:
-#         sen = input('>>')
-#         print(bot.chat(sen))
+if __name__ == "__main__":
+    bot = IRbot()
+
+    while True:
+        sen = input('>>')
+        print(bot.chat(sen))
 

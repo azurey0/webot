@@ -1,6 +1,7 @@
 from flask import render_template,jsonify,request, flash, redirect, url_for
 from app import app, db
 from information_retrieval.get_answer import IRbot
+from app.dialogue_mnger import Dialogue
 from app.forms import LoginForm, RegistrationForm
 from flask_login import current_user, login_user, logout_user, login_required
 from app.models import User
@@ -20,9 +21,11 @@ def index():
 @app.route('/send_message', methods=['POST'])
 def send_message():
     message = request.form['message']
-    res = IRbot.chat(message)
-    # res = chat_bot.chat(message)
-    response_text = {"message": res}
+    # res = IRbot.chat(message)
+    dialogue = Dialogue()
+    ans = dialogue.global_manager(message)
+    # response_text = {"message": res}
+    response_text = {"message": ans}
     return jsonify(response_text)
 
 @app.route('/login', methods=['GET', 'POST'])
